@@ -75,7 +75,7 @@ func (cw complexityWalker) fieldComplexity(object, field string, childComplexity
 		return customComplexity
 	}
 	// default complexity calculation
-	return safeAdd(1, childComplexity)
+	return safeAdd(0, childComplexity)
 }
 
 const maxInt = int(^uint(0) >> 1)
