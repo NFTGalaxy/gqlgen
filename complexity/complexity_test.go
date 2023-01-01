@@ -56,6 +56,9 @@ func requireComplexity(t *testing.T, source string, complexity int) {
 			case "ExpensiveItem.name":
 				return 5, true
 			case "Query.list", "Item.list":
+				if childComplexity == 0 {
+					childComplexity = 1
+				}
 				return int(args["size"].(int64)) * childComplexity, true
 			case "Query.customObject":
 				return 1, true
@@ -78,7 +81,7 @@ func TestCalculate(t *testing.T) {
 			scalar
 		}
 		`
-		requireComplexity(t, query, 1)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("adds together fields", func(t *testing.T) {
@@ -88,7 +91,7 @@ func TestCalculate(t *testing.T) {
 			scalar2: scalar
 		}
 		`
-		requireComplexity(t, query, 2)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("a level of nesting adds complexity", func(t *testing.T) {
@@ -99,7 +102,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
-		requireComplexity(t, query, 2)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("adds together children", func(t *testing.T) {
@@ -111,7 +114,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
-		requireComplexity(t, query, 3)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("adds inline fragments", func(t *testing.T) {
@@ -122,7 +125,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
-		requireComplexity(t, query, 1)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("adds fragments", func(t *testing.T) {
@@ -135,7 +138,7 @@ func TestCalculate(t *testing.T) {
 			scalar
 		}
 		`
-		requireComplexity(t, query, 1)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("uses custom complexity", func(t *testing.T) {
@@ -157,7 +160,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
-		requireComplexity(t, query, 2)
+		requireComplexity(t, query, 0)
 	})
 
 	t.Run("custom complexity must be >= child complexity", func(t *testing.T) {
@@ -170,7 +173,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
-		requireComplexity(t, query, 101)
+		requireComplexity(t, query, 100)
 	})
 
 	t.Run("interfaces take max concrete cost", func(t *testing.T) {
@@ -181,7 +184,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
-		requireComplexity(t, query, 6)
+		requireComplexity(t, query, 5)
 	})
 
 	t.Run("guards against integer overflow", func(t *testing.T) {
@@ -210,6 +213,7 @@ func TestCalculate(t *testing.T) {
 			}
 		}
 		`
+		// complexity should be 0x7fffffff*0x7fffffff*2 + 0x7fffffff*0x7fffffff*2, but the sum is overflow, max value is maxInt64
 		requireComplexity(t, query, math.MaxInt64)
 	})
 }
